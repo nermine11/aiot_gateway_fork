@@ -72,6 +72,14 @@
         }
         // make map page dynamic
         function change_map(){
+                // remove suite button
+                const button_s = document.getElementById("button_suite_group");
+                if (button_s) { 
+                    button_s.remove(); 
+                    console.log("Button removed successfully.");
+                } else {
+                    console.log("Button group not found.");
+                }
                 // Change mote circles from grey to green to indicate that they are part of the network
                 // radiuses of circles composing the active mote circle
                 const r1= 12.19;
