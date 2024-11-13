@@ -19,6 +19,7 @@ def serve_static(filename):
 @app.route('/send_data', method='POST')
 def send_data():
     data        = request.json
+    print(data)
     macAddress  = data.get('macAddress')
     print(macAddress)
     priority    = data.get('priority')
@@ -30,6 +31,7 @@ def send_data():
     options     = data.get("options")
     print(options)
     data        = data.get('data')
+    data = [0, data]
     print(data)
     response    = send_data_to_mote(macAddress, priority, srcPort, dstPort, options, data)
     if response:
