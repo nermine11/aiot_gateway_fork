@@ -35,7 +35,7 @@ def send_data_to_mote(mote_mac_address, priority, src_port, dest_port, options, 
     Send data to a mote using the sendData method from JsonManager.
     """
     try:
-        response = json_manager.snapshotThread.raw_POST(
+        response = json_manager.raw_POST(
             commandArray   = ["sendData"],
             fields         = {
                 "macAddress":mote_mac_address,  
@@ -77,7 +77,7 @@ if __name__ == '__main__':
             autoaddmgr=True,
             autodeletemgr=True,
             serialport=manager,
-            configfilename='JsonServer.config',
+            configfilename=None,
             notifCb=notif_cb
         )
     except Exception as e:
