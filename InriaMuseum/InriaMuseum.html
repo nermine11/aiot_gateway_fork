@@ -8,7 +8,14 @@
         var previous_page;
         var f_call_change_map = false; // if f_call_change_map, execute change_map()
         var num_people;
-        var detecting = {};
+        var num_people_detected = 0;
+        var detecting_response = {};
+        var broadcast_address = 0xffffffff;
+        var srcPort = 61624;
+        var destPort = 61624;
+        var priority = 0;
+        var options = "High";
+        var US_active = 0x02;
         function handleButtonClick(event) { //event listener for buttons
             console.log(`ct handleButtonClick ${event}`);
             console.log(`event.target.id ${event.target.id}`);
@@ -73,23 +80,47 @@
             loadSVG(current_page);
             checkPage();
         }
-        function change_map(){
-                console.log("change map");
-                // Change mote circles from grey to green to indicate that they are part of the network
-                // radiuses of circles composing the active mote circle
-                const r1= 12.19;
-                const r2= 20.08;
-                const r3= 25.08;
-                const r4= 28.00;
-                const grey_motes_ids = [
-                    "hall_mote1", "hall_mote2","hall_mote3","hall_mote4",
-                    "hall_mote5", "hall_mote6", "expo_mote1", "expo_mote2", 
-                    "expo_mote3", "expo_mote4", "expo_mote5", "machine_mote", 
-                    "xplore_mote", "algorithme_mote", "language_mote", 
-                    "information_mote", "robotique_mote", "apprentissage_mote",
-                    "reseau_mote", "big_data_mote"
-                ];
-                grey_motes_ids.forEach(mote => {
+        function sendDataToMote(mote_mac_address, srcPort, destPort, priority, payload) {
+            // Prepare the data to send in the body of the POST request
+            var data = {
+                mote_mac_address: mote_mac_address,
+                src_port: srcPort,
+                dest_port: destPort,
+                priority: priority,
+                payload: payload
+            };
+            fetch('/send_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })//Handle the Server’s Response
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            })//Error Handling
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Error sending data");
+            });
+        }
+        async function detecting_notif() {
+            console.log("fetch detecting");
+            try {
+                const response = await fetch('http://localhost:8080/detecting');
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+                // {m0: 0/1, m1: 0/1 .... m8: 0/1}
+                detecting_response = await response.json();
+                } catch (error) {
+                    console.error('Error fetching detecting:', error.message);
+                }
+        }
+        // Change mote circles from grey to green to indicate that they are part of the network
+        function active_motes(grey_motes_ids,r1, r2, r3, r4){
+            grey_motes_ids.forEach(mote => {
                     const mote_grey_circle = document.getElementById(mote);
                     if (!mote_grey_circle) {
                         console.error("mote not found");
@@ -122,7 +153,57 @@
                         console.log("element replaced");
                         }
                 })  
+        }
+        // change board color of chosen positions to orange
+        function change_color(chosen_positions){
+            chosen_positions.forEach(position => {
+                const mote_board = document.getElementById(motes_positions_keys[position]);
+                console.log(`${mote_board}`);
+                if (!mote_board) {
+                    console.error("Board not found");
+                    return; 
+                }
+                mote_board.setAttribute("class", "cls-14");
+            })
+        }
+        function add_logo(detect_content, position, class1, radius){
+            const detect = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            detect.setAttribute("id", `${detect}_detect`);
+            const detect1 = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("class", class1);
+            path.setAttribute("d", detect_content[position][0]);
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("class", class1);
+            circle.setAttribute("cx", detect_content[position][1]);
+            circle.setAttribute("cy", detect_content[position][2]);
+            circle.setAttribute("r", radius );
+            circle.setAttribute("transform", detect_content[position][3] );                       
+            detect1.appendChild(path);
+            detect1.appendChild(circle);
+            detect.appendChild(detect1);
+        }
+        function change_map(){
+                console.log("change map");
+                // radiuses of circles composing the active mote circle
+                const r1= 12.19;
+                const r2= 20.08;
+                const r3= 25.08;
+                const r4= 28.00;
+                const grey_motes_ids = [
+                    "hall_mote1", "hall_mote2","hall_mote3","hall_mote4",
+                    "hall_mote5", "hall_mote6", "expo_mote1", "expo_mote2", 
+                    "expo_mote3", "expo_mote4", "expo_mote5", "machine_mote", 
+                    "xplore_mote", "algorithme_mote", "language_mote", 
+                    "information_mote", "robotique_mote", "apprentissage_mote",
+                    "reseau_mote", "big_data_mote"
+                ];
+                active_motes(grey_motes_ids, r1, r2, r3, r4);
                 //pick randomly n positions and change board color to orange
+                // to ensure the order of the keys stays the same
+                const motes_positions_keys = ["machine_board", "xplore_board", "algorithme_board", "language_board",
+                                            "information_board", "robotique_board", "apprentissage_board",
+                                            "reseau_board", "big_data_board"]
                 const motes_positions = { 
                         "machine_board": "00-17-0D-00-00-70-1A-06", 
                         "xplore_board":  "00-17-0D-00-00-33-F3-4E", 
@@ -145,38 +226,10 @@
                 }
                 const num_positions = 9;
                 let chosen_positions = random_set(0, num_positions - 1, num_people);
-                let motes_positions_keys = Object.keys(motes_positions);
                 // change board color of chosen positions to orange
-                chosen_positions.forEach(position => {
-                    const mote_board = document.getElementById(motes_positions_keys[position]);
-                    console.log(`${mote_board}`);
-                    if (!mote_board) {
-                        console.error("Board not found");
-                        return; 
-                    }
-                    mote_board.setAttribute("class", "cls-14");
-                })
+                change_color(chosen_positions);
                 // Check if person is in the specified position, if so add a person logo
-                // detecting is the Dictionary to store if each mote detects a person
-                console.log("before fetch detecting");
-                async function fetch_detecting() {
-                    console.log("fetch detecting");
-                    try {
-                        const response = await fetch('http://localhost:8080/detecting');
-                        if (!response.ok) {
-                            throw new Error(`Response status: ${response.status}`);
-                        }
-                        detecting = await response.json();
-                        console.log(detecting`${detecting[0]}`);
-
-
-                    } catch (error) {
-                        console.error('Error fetching detecting:', error.message);
-                    }
-                }
-                fetch_detecting();
-                // dictionnary used to add the person logo 
-                //{mote_index: [d, cx, cy, transform]}
+                // dictionnary used to add the person logo : {mote_index: [d, cx, cy, transform]}
                 let detect_content= {
                     0: ["m1184.87,548.46c-6-4.06-26.11-4.06-32.1,0-5.38,3.64-5.92,15.17-5.97,17.44-.02.7.25,1.38.74,1.88.49.5,1.16.78,1.86.78h38.85c.7,0,1.37-.28,1.86-.78.49-.5.76-1.18.74-1.88-.05-2.27-.59-13.8-5.97-17.44Z",
                         "1168.82", 
@@ -225,42 +278,33 @@
                         "translate(-150.92 172.15) rotate(-12.77)"
                     ]
                 }
-                let class1 = "cls-14";
-                let radius = 13.33;
+                const class1 = "cls-14";
+                const radius = 13.33;
                 // continue checking until all users are detected
-                while( num_people_detected != num_people){
+                while(num_people_detected != num_people){
                     // set contains the mac addresses of the motes where the users are detected
                     let detected_pos = new Set();
                     chosen_positions.forEach(position =>{
                         let key = motes_positions_keys[position];
                         const mac_address = motes_positions[key];
-                        // if user has not been detected yet, recheck if he is in the right position
+                        sendDataToMote(mac_address, priority, srcPort, destPort, options, US_active);
+                        detecting_notif();
+                        // if user has not been detected yet, recheck if he is detected
+                        // if he has been detected do not check again
                         if ( !(detected_pos.has(mac_address))){
-                            detected_pos.add(mac_address);
                             // if a person is detected, add person logo in the appropriate position
-                            if(detecting[mac_address]){
-                                const mote_id = document.getElementById(motes_positions[position][0]);
+                            if(detecting_response[mac_address] === 1){
+                                const mote_id = document.getElementById(motes_positions[position]);
                                 if (!mote_id) {
                                     console.error("Board not found");
                                     return; 
                                 }
-                                const detect = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                                detect.setAttribute("id", `${detect}_detect`);
-                                const detect1 = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                                path.setAttribute("class", class1);
-                                path.setAttribute("d", detect_content[position][0]);
-                                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                                circle.setAttribute("class", class1);
-                                circle.setAttribute("cx", detect_content[position][1]);
-                                circle.setAttribute("cy", detect_content[position][2]);
-                                circle.setAttribute("r", radius );
-                                circle.setAttribute("transform", detect_content[position][3] );                       
-                                detect1.appendChild(path);
-                                detect1.appendChild(circle);
-                                detect.appendChild(detect1);
+                                // Add mote to the list of detected motes
+                                detected_pos.add(mac_address);
+                                num_people_detected++;
+                                add_logo(detect_content, position, class1, radius);
                             }
-                        }
+                        } 
                     })
                 }// all users are in the right position
         }   
@@ -286,11 +330,10 @@
                     if (f_call_change_map){
                         change_map(); // Ensuring it is called after map is loaded
                     }
-
                 })
                 .catch(error => console.error('Error loading SVG:', error));
         }
-        function activate_buttons() { // Initialize buttons & add listeners
+        function activate_buttons() { 
             console.log("fct load element");
             const button_ids = ["button_start_fr", "button_active", 
                         "button_suite_group", "button_music1", "button_music2",

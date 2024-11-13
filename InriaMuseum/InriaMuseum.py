@@ -15,6 +15,36 @@ def index():
 def serve_static(filename):
     print("fct '/<filename:path>'")
     return static_file(filename, root='.')
+@app.route('/send_data', method='POST')
+def send_data():
+    data = request.json
+    mote_mac_address = data.get('mote_mac_address')
+    options = data.get("options")
+    src_port = data.get('src_port')
+    dest_port = data.get('dest_port')
+    priority = data.get('priority')
+    payload = data.get('payload')
+    response = send_data_to_mote(mote_mac_address, priority, src_port, dest_port, options, payload)
+    if response:
+        return {"status": "success", "message": "Data sent successfully"}
+    else:
+        return {"status": "error", "message": "Failed to send data"}
+def send_data_to_mote(mote_mac_address, priority, src_port, dest_port, options, payload):
+    """
+    Send data to a mote using the sendData method from JsonManager.
+    """
+    try:
+        response = json_manager.sendData(
+            destination=mote_mac_address,  
+            priority=priority,   
+            srcPort=src_port,                
+            destPort=dest_port,             
+            options=options,
+            payload=payload                  # Data in hex format
+        )
+    except Exception as e:
+        print(f"Failed to send data: {e}")
+        return None
 @app.route('/detecting', method='GET')
 def detect_presence():
     response.content_type = 'application/json'
@@ -24,7 +54,8 @@ def notif_cb(notifName, notifJson):
     print("get_distances")
     print(notifName)
     if (notifName == "notifData"):
-        notification = requests.get('http://127.0.0.1:1880/notifData')
+        response = requests.get('http://127.0.0.1:1880/notifData')
+        notification = json.loads(response)
         mac_address = notification['fields']['macAddress']
         data = notification['fields']['data']
         detect = data[0]                                    # 1 to indicate presence else 0
