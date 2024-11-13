@@ -8,6 +8,7 @@ SERVERtoLISTEN = "http://localhost:8080/json"
 app = Bottle()
 # Dictionary to store distance reported by each mote by MAC address
 mote_detecting = {}
+manager = '/dev/ttyUSB3'
 @app.route('/')
 def index():
     return template('InriaMuseum.html')  
@@ -34,15 +35,22 @@ def send_data_to_mote(mote_mac_address, priority, src_port, dest_port, options, 
     Send data to a mote using the sendData method from JsonManager.
     """
     try:
-        response = json_manager.sendData(
-            destination=mote_mac_address,  
-            priority=priority,   
-            srcPort=src_port,                
-            destPort=dest_port,             
-            options=options,
-            payload=payload                  # Data in hex format
+        response = json_manager.snapshotThread.raw_POST(
+            commandArray   = ["sendData"],
+            fields         = {
+                "macAddress":mote_mac_address,  
+                "priority":priority,   
+                "srcPort":src_port,                
+                "dstPort":dest_port,             
+                "options":options,
+                "data":payload
+            },
+            manager        = manager,                
         )
+        print(f"Response from raw_POST: {response}")
+        return response
     except Exception as e:
+        print(e.message)
         print(f"Failed to send data: {e}")
         return None
 @app.route('/detecting', method='GET')
@@ -68,11 +76,10 @@ if __name__ == '__main__':
         json_manager = JsonManager.JsonManager(
             autoaddmgr=True,
             autodeletemgr=True,
-            serialport='/dev/ttyUSB3',
+            serialport=manager,
             configfilename='JsonServer.config',
             notifCb=notif_cb
         )
-        print("Connected to SmartMesh Manager and started JSON server.")
     except Exception as e:
         print(f"Error initializing JsonManager: {e}")
         exit(1)
