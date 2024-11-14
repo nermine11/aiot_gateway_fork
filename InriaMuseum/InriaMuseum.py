@@ -67,17 +67,16 @@ def detect_presence():
 # Callback function, triggered whenever the JsonManager receives notifications
 def notif_cb(notifName, notifJson):
     print(notifName)
+    if notifName == "event":
+        print("Received event notification")
+        print(notifJson)
     if notifName == "notifData":
-        print("notiffffff")
-        response = requests.get('http://127.0.0.1:1880/notifData')
-        notification = json.loads(response.text)
-        mac_address = notification['fields']['macAddress']
-        data = notification['fields']['data']
+        print("Received data notification")
+        mac_address = notifJson['fields']['macAddress']
+        data = notifJson['fields']['data']
         detect = data[0]  # 1 to indicate presence, else 0
         print(data)
         mote_detecting[mac_address] = detect
-    else:
-        print("not notif data")
 # Start the web server
 if __name__ == '__main__':
     try:
