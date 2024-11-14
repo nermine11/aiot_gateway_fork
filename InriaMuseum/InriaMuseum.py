@@ -38,7 +38,6 @@ def send_data():
         return {"status": "success", "message": "Data sent successfully"}
     else:
         return {"status": "error", "message": "Failed to send data"}
-
 def send_data_to_mote(macAddress, priority, srcPort, dstPort, options, data):
     """
     Send data to a mote using the sendData method from JsonManager.
@@ -67,14 +66,15 @@ def detect_presence():
     return json.dumps(mote_detecting)
 # Callback function, triggered whenever the JsonManager receives notifications
 def notif_cb(notifName, notifJson):
-    print("get_distances")
     print(notifName)
     if notifName == "notifData":
+        print("notiffffff")
         response = requests.get('http://127.0.0.1:1880/notifData')
         notification = json.loads(response.text)
         mac_address = notification['fields']['macAddress']
         data = notification['fields']['data']
         detect = data[0]  # 1 to indicate presence, else 0
+        print(data)
         mote_detecting[mac_address] = detect
     else:
         print("not notif data")

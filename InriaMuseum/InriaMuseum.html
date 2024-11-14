@@ -296,44 +296,46 @@
                 const class1 = "cls-14";
                 const radius = 13.33;
                 // continue checking until all users are detected
-                while(num_people_detected != num_people){
-                    // set contains the mac addresses of the motes where the users are detected
-                    let detected_pos = new Set();
-                    chosen_positions.forEach(position =>{
-                        let key = motes_positions_keys[position];
-                        const mac_address = motes_positions[key];
-                        console.log("Sending data with parameters:", {
-                            macAddress: mac_address,
-                            priority: priority,
-                            srcPort: srcPort,
-                            destPort: destPort,
-                            options: options,
-                            payload: US_active
-                        });
-                        console.log("Sending data with parameters:", {
-                            payload: US_active
-                        });
-                        send_data_to_mote(mac_address, priority, srcPort, destPort, options, US_active);
-                        detecting_notif();
-                        // if user has not been detected yet, recheck if he is detected
-                        // if he has been detected do not check again
-                        if ( !(detected_pos.has(mac_address))){
-                            // if a person is detected, add person logo in the appropriate position
-                            if(detecting_response[mac_address] === 1){
-                                const mote_id = document.getElementById(key);
-                                if (!mote_id) {
-                                    console.error("Board not found");
-                                    return; 
-                                }
-                                // Add mote to the list of detected motes
-                                detected_pos.add(mac_address);
-                                num_people_detected++;
-                                add_logo(detect_content, position, class1, radius, key);
+                // set contains the mac addresses of the motes where the users are detected
+                let detected_pos = new Set();
+                chosen_positions.forEach(position =>{
+                    let key = motes_positions_keys[position];
+                    const mac_address = motes_positions[key];
+                    console.log("Sending data with parameters:", {
+                        macAddress: mac_address,
+                        priority: priority,
+                        srcPort: srcPort,
+                        destPort: destPort,
+                        options: options,
+                        payload: US_active
+                    });
+                    console.log("Sending data with parameters:", {
+                        payload: US_active
+                    });
+                    send_data_to_mote(mac_address, priority, srcPort, destPort, options, US_active);
+                    detecting_notif();
+                    // if user has not been detected yet, recheck if he is detected
+                    // if he has been detected do not check again
+                    if ( !(detected_pos.has(mac_address))){
+                        // if a person is detected, add person logo in the appropriate position
+                        if(detecting_response[mac_address] === 1){
+                            const mote_id = document.getElementById(key);
+                            if (!mote_id) {
+                                console.error("Board not found");
+                                return; 
                             }
-                        } 
-                    })
-                }// all users are in the right position
-        }   
+                            // Add mote to the list of detected motes
+                            detected_pos.add(mac_address);
+                            num_people_detected++;
+                            add_logo(detect_content, position, class1, radius, key);
+                        }
+                    } 
+                })
+                } if (num_people == num_people_detected){
+                    console.log("all detected");
+                }
+                // all users are in the right position
+          
         function checkPage() {
             console.log("fct checkPage");
             // display defi page(introduction.svg) after 3s
