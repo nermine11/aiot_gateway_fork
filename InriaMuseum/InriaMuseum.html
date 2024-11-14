@@ -15,7 +15,7 @@
         var destPort = 61624;
         var priority = 2;
         var options = 0;
-        var US_active = 0x2;
+        var US_active = 0x02;
         var motes_positions_keys = ["machine_board", "xplore_board", "algorithme_board", "language_board",
                                             "information_board", "robotique_board", "apprentissage_board",
                                             "reseau_board", "big_data_board"]
@@ -129,6 +129,7 @@
                 }
                 // {m0: 0/1, m1: 0/1 .... m8: 0/1}
                 detecting_response = await response.json();
+                console.log(detecting_response);
                 } catch (error) {
                     console.error('Error fetching detecting:', error.message);
                 }

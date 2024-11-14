@@ -31,7 +31,7 @@ def send_data():
     options     = data.get("options")
     print(options)
     data        = data.get('data')
-    data = [0, data]
+    data = [data]
     print(data)
     response    = send_data_to_mote(macAddress, priority, srcPort, dstPort, options, data)
     if response:
