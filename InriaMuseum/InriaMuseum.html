@@ -4,21 +4,26 @@
     <title>Inria Museum</title>
     <link rel="stylesheet" type="text/css" href="InriaMuseum.css"> 
     <script>
-        var current_page; //global variable
+        var current_page; 
         var previous_page;
         var f_call_change_map = false; // if f_call_change_map, execute change_map()
         var num_people;
         var num_people_detected = 0;
-        var detecting_response = {};
-        var broadcast_address = 0xffffffff;
+        var fetch_detect = {};
+        var broadcast_address =  "ff-ff-ff-ff-ff-ff-ff-ff";
+        var f_play_harry_potter = false;
+        var f_play_star_wars = false;
         var srcPort = 61624;
         var destPort = 61624;
         var priority = 2;
         var options = 0;
         var US_active = 0x02;
-        var motes_positions_keys = ["machine_board", "xplore_board", "algorithme_board", "language_board",
-                                            "information_board", "robotique_board", "apprentissage_board",
-                                            "reseau_board", "big_data_board"]
+        var f_send_data = 0;
+        var play_Star_Wars = 0x03;
+        var play_Harry_Potter = 0x04;
+        var motes_positions_labels = ["machine_board", "xplore_board", "algorithme_board", "language_board",
+                                      "information_board", "robotique_board", "apprentissage_board",
+                                      "reseau_board", "big_data_board"]
         var motes_positions = { 
                         "machine_board": "00-17-0D-00-00-70-1A-06", 
                         "xplore_board":  "00-17-0D-00-00-33-F3-4E", 
@@ -30,20 +35,17 @@
                         "reseau_board": "00-17-0D-00-00-70-53-BA",
                         "big_data_board" :"00-17-0D-00-00-68-0B-04"
         }
-        function handleButtonClick(event) { //event listener for buttons
-            console.log(`ct handleButtonClick ${event}`);
-            console.log(`event.target.id ${event.target.id}`);
+        //event listener for buttons
+        function handleButtonClick(event) { 
             if(event.target.id == ""){
                 const parentElementId = event.target.parentElement ?
                 event.target.parentElement.id : 'No parent element';
-                console.log(`event.target.id ${event.target.parentElement.id}`)
                 changePage(parentElementId);
             }else{
                 changePage(event.target.id);
             }
         }
         function changePage(parent_element) {
-            console.log(`fct changePage ${parent_element}`);
             switch (parent_element) {
                 case "button_start_fr":
                     current_page='launching.svg';
@@ -54,10 +56,14 @@
                 case "button_suite":
                     current_page='select_music.svg'
                     break;
-                case "button_music1" :
+                    case "button_music1" :
+                    f_play_harry_potter = true;
+                    f_play_star_wars = false;
                     current_page = "num_people.svg";
                     break;
                 case "button_music2" :
+                    f_play_star_wars = true;
+                    f_play_harry_potter = false;
                     current_page = "num_people.svg";
                     break;
                     case "button_num_people_1":
@@ -96,7 +102,7 @@
         }
         function send_data_to_mote(macAddress, priority, srcPort, dstPort, options, data) {
             // Prepare the data to send in the body of the POST request
-            var data = {
+            var payload = {
                 macAddress: macAddress,
                 priority: priority,
                 srcPort: srcPort,
@@ -109,27 +115,24 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(payload)
             })//Handle the Server’s Response
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
+            .then(response => console.log(response))
+            .then(payload => {
+                console.log(payload);
             })//Error Handling
             .catch(error => {
                 console.error('Error:', error);
-                alert("Error sending data");
             });
         }
-        async function detecting_notif() {
-            console.log("fetch detecting");
+        async function detecting_notifications() {
             try {
-                const response = await fetch('http://localhost:8080/detecting');
+                const response = await fetch('/detecting');
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
                 // {m0: 0/1, m1: 0/1 .... m8: 0/1}
-                detecting_response = await response.json();
-                console.log(detecting_response);
+                fetch_detect = await response.json();
                 } catch (error) {
                     console.error('Error fetching detecting:', error.message);
                 }
@@ -173,7 +176,7 @@
         // change board color of chosen positions to orange
         function change_color(chosen_positions){
             chosen_positions.forEach(position => {
-                const mote_board = document.getElementById(motes_positions_keys[position]);
+                const mote_board = document.getElementById(motes_positions_labels[position]);
                 console.log(`${mote_board}`);
                 if (!mote_board) {
                     console.error("Board not found");
@@ -182,31 +185,30 @@
                 mote_board.setAttribute("class", "cls-14");
             })
         }
-        function add_logo(detect_content, position, class1, radius, key){
-            const detect = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            detect.setAttribute("id", `${key}_detect`);
-            const detect1 = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            path.setAttribute("class", class1);
-            path.setAttribute("d", detect_content[position][0]);
-            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("class", class1);
-            circle.setAttribute("cx", detect_content[position][1]);
-            circle.setAttribute("cy", detect_content[position][2]);
-            circle.setAttribute("r", radius );
-            circle.setAttribute("transform", detect_content[position][3] );                       
-            detect1.appendChild(path);
-            detect1.appendChild(circle);
-            detect.appendChild(detect1);
+        function add_logo(add_logo_dict,position, position_label , radius){
+            const id = position_label.replace("_board", "");
+            const detect = document.getElementById(`${id}_detect`)
+            if (detect) {
+                const path = detect.querySelector("path.cls-14");
+                const circle = detect.querySelector("circle.cls-14");
+                if (path && circle) {
+                        path.setAttribute("d", add_logo_dict[position][0]);
+                        circle.setAttribute("cx", add_logo_dict[position][1]);
+                        circle.setAttribute("cy", add_logo_dict[position][2]);
+                        circle.setAttribute("r", radius);
+                        circle.setAttribute("transform", add_logo_dict[position][3]);
+                }
+            }
         }
         function change_map(){
-                console.log("change map");
-                // radiuses of circles composing the active mote circle
-                const r1= 12.19;
-                const r2= 20.08;
-                const r3= 25.08;
-                const r4= 28.00;
-                const grey_motes_ids = [
+            // radiuses of circles composing the active mote circle
+            const r1= 12.19;
+            const r2= 20.08;
+            const r3= 25.08;
+            const r4= 28.00;
+            const radius = 13.33;
+            const num_positions = 9;
+            const grey_motes_ids = [
                     "hall_mote1", "hall_mote2","hall_mote3","hall_mote4",
                     "hall_mote5", "hall_mote6", "expo_mote1", "expo_mote2", 
                     "expo_mote3", "expo_mote4", "expo_mote5", "machine_mote", 
@@ -214,13 +216,12 @@
                     "information_mote", "robotique_mote", "apprentissage_mote",
                     "reseau_mote", "big_data_mote"
                 ];
-                active_motes(grey_motes_ids, r1, r2, r3, r4);
-                //pick randomly n positions and change board color to orange
-                // to ensure the order of the keys stays the same
-                const motes_positions_keys = ["machine_board", "xplore_board", "algorithme_board", "language_board",
-                                            "information_board", "robotique_board", "apprentissage_board",
-                                            "reseau_board", "big_data_board"]
-                const motes_positions = { 
+            active_motes(grey_motes_ids, r1, r2, r3, r4);
+            //pick randomly n positions and change board color to orange
+            const motes_positions_labels = ["machine_board", "xplore_board", "algorithme_board", "language_board",
+                                        "information_board", "robotique_board", "apprentissage_board",
+                                        "reseau_board", "big_data_board"]
+            const motes_positions = { 
                         "machine_board": "00-17-0D-00-00-70-1A-06", 
                         "xplore_board":  "00-17-0D-00-00-33-F3-4E", 
                         "algorithme_board": "00-17-0D-00-00-70-1C-A3",
@@ -231,22 +232,20 @@
                         "reseau_board": "00-17-0D-00-00-70-53-BA",
                         "big_data_board" :"00-17-0D-00-00-68-0B-04"
                 }
-                // Set of n unique random integers between min = 0 and max = num_positions-1 = 8
-                const random_set = (min, max, n = 1) => {
-                    const uniqueNumbers = new Set();
-                    while (uniqueNumbers.size < n) {
-                        const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
-                        uniqueNumbers.add(randomNum); 
-                    }
-                    return Array.from(uniqueNumbers);
+            // Set of n unique random integers between min = 0 and max = num_positions-1 = 8
+            const random_set = (min, max, n = 1) => {
+                const uniqueNumbers = new Set();
+                while (uniqueNumbers.size < n) {
+                    const randomNum = Math.floor(Math.random() * (max - min + 1)) + min;
+                    uniqueNumbers.add(randomNum); 
                 }
-                const num_positions = 9;
-                let chosen_positions = random_set(0, num_positions - 1, num_people);
-                // change board color of chosen positions to orange
-                change_color(chosen_positions);
-                // Check if person is in the specified position, if so add a person logo
-                // dictionnary used to add the person logo : {mote_index: [d, cx, cy, transform]}
-                let detect_content= {
+                return Array.from(uniqueNumbers);
+            }
+            let chosen_positions = random_set(0, num_positions - 1, num_people);
+            change_color(chosen_positions);
+            // Check if person is in the specified position, if so add a person logo
+            // {mote_index: [d, cx, cy, transform]} 
+            let add_logo_dict= {
                     0: ["m1184.87,548.46c-6-4.06-26.11-4.06-32.1,0-5.38,3.64-5.92,15.17-5.97,17.44-.02.7.25,1.38.74,1.88.49.5,1.16.78,1.86.78h38.85c.7,0,1.37-.28,1.86-.78.49-.5.76-1.18.74-1.88-.05-2.27-.59-13.8-5.97-17.44Z",
                         "1168.82", 
                         "527.89", 
@@ -294,49 +293,41 @@
                         "translate(-150.92 172.15) rotate(-12.77)"
                     ]
                 }
-                const class1 = "cls-14";
-                const radius = 13.33;
-                // continue checking until all users are detected
-                // set contains the mac addresses of the motes where the users are detected
-                let detected_pos = new Set();
-                chosen_positions.forEach(position =>{
-                    let key = motes_positions_keys[position];
-                    const mac_address = motes_positions[key];
-                    console.log("Sending data with parameters:", {
-                        macAddress: mac_address,
-                        priority: priority,
-                        srcPort: srcPort,
-                        destPort: destPort,
-                        options: options,
-                        payload: US_active
-                    });
-                    console.log("Sending data with parameters:", {
-                        payload: US_active
-                    });
-                    send_data_to_mote(mac_address, priority, srcPort, destPort, options, US_active);
-                    detecting_notif();
-                    // if user has not been detected yet, recheck if he is detected
-                    // if he has been detected do not check again
-                    if ( !(detected_pos.has(mac_address))){
-                        // if a person is detected, add person logo in the appropriate position
-                        if(detecting_response[mac_address] === 1){
-                            const mote_id = document.getElementById(key);
-                            if (!mote_id) {
-                                console.error("Board not found");
-                                return; 
-                            }
-                            // Add mote to the list of detected motes
-                            detected_pos.add(mac_address);
-                            num_people_detected++;
-                            add_logo(detect_content, position, class1, radius, key);
+            // detected_positions contains the mac addresses of the motes where the users are detected
+            let detected_positions = new Set();
+                // recheck detection every 5s
+                const intervalId= setInterval(() => {
+                    detecting_notifications();
+                    for (let i = 0; i< num_people; i ++ ){
+                        let position = chosen_positions[i];
+                        let position_label = motes_positions_labels[position];                    
+                        let mac_address = (motes_positions[position_label]).toLowerCase();
+                        // to ensure send_data_to_mote is only run num_people times
+                        if (f_send_data < num_people){
+                            send_data_to_mote(mac_address, priority, srcPort, destPort, options, US_active);
+                            f_send_data ++;
                         }
-                    } 
-                })
-                } if (num_people == num_people_detected){
-                    console.log("all detected");
+                        if ((detected_positions.has(mac_address)) === false){
+                        // if a person is detected, add person logo in the appropriate position
+                            if(fetch_detect[mac_address] == 1){
+                                // Add mote to the list of detected motes
+                                detected_positions.add(mac_address);
+                                num_people_detected++;
+                                add_logo(add_logo_dict, position, position_label, radius);
+                                if (num_people == num_people_detected){
+                                    if (f_play_harry_potter){
+                                        send_data_to_mote(broadcast_address,priority, srcPort, destPort, options,play_Harry_Potter);
+                                    }
+                                    else if(f_play_star_wars){
+                                        send_data_to_mote(broadcast_address,priority, srcPort, destPort, options,play_Star_Wars);
+                                    }
+                                    clearInterval(intervalId);
+                            }
+                        } 
+                    }
                 }
-                // all users are in the right position
-          
+            },5000);
+        }
         function checkPage() {
             console.log("fct checkPage");
             // display defi page(introduction.svg) after 3s

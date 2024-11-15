@@ -6,7 +6,6 @@ from SmartMeshSDK.utils import JsonManager
 from smartmeshsdk3.app import JsonServer
 SERVERtoLISTEN = "http://localhost:8080/json"
 app = Bottle()
-# Dictionary to store distance reported by each mote by MAC address
 mote_detecting = {}
 manager = '/dev/ttyUSB3'
 @app.route('/')
@@ -18,26 +17,16 @@ def serve_static(filename):
     return static_file(filename, root='.')
 @app.route('/send_data', method='POST')
 def send_data():
-    data        = request.json
-    print(data)
-    macAddress  = data.get('macAddress')
+    payload        = request.json
+    macAddress  = payload.get('macAddress')
     print(macAddress)
-    priority    = data.get('priority')
-    print(priority)
-    srcPort     = data.get('srcPort')
-    print(srcPort)
-    dstPort     = data.get('dstPort')
-    print(dstPort)
-    options     = data.get("options")
-    print(options)
-    data        = data.get('data')
+    priority    = payload.get('priority')
+    srcPort     = payload.get('srcPort')
+    dstPort     = payload.get('dstPort')
+    options     = payload.get("options")
+    data        = payload.get('data')
     data = [data]
-    print(data)
     response    = send_data_to_mote(macAddress, priority, srcPort, dstPort, options, data)
-    if response:
-        return {"status": "success", "message": "Data sent successfully"}
-    else:
-        return {"status": "error", "message": "Failed to send data"}
 def send_data_to_mote(macAddress, priority, srcPort, dstPort, options, data):
     """
     Send data to a mote using the sendData method from JsonManager.
@@ -60,23 +49,20 @@ def send_data_to_mote(macAddress, priority, srcPort, dstPort, options, data):
     except Exception as e:
         print(f"Failed to send data: {e}")
         return None
-@app.route('/detecting', method='GET')
-def detect_presence():
-    response.content_type = 'application/json'
-    return json.dumps(mote_detecting)
 # Callback function, triggered whenever the JsonManager receives notifications
 def notif_cb(notifName, notifJson):
-    print(notifName)
-    if notifName == "event":
-        print("Received event notification")
-        print(notifJson)
     if notifName == "notifData":
         print("Received data notification")
         mac_address = notifJson['fields']['macAddress']
         data = notifJson['fields']['data']
         detect = data[0]  # 1 to indicate presence, else 0
-        print(data)
         mote_detecting[mac_address] = detect
+        print(mote_detecting)
+@app.route('/detecting', method='GET')
+def detect_presence():
+    response.content_type = 'application/json'
+    print(mote_detecting)
+    return json.dumps(mote_detecting)
 # Start the web server
 if __name__ == '__main__':
     try:
@@ -88,13 +74,6 @@ if __name__ == '__main__':
             configfilename=None,
             notifCb=notif_cb
         )
-        print(f"Connected to SmartMesh Manager and started JSON server.")
-        handler = json_manager.managerHandlers.get(manager)
-        if handler:
-            print(f"Connector: {handler.connector}")
-            print(f"Connector Type: {type(handler.connector)}")
-        else:
-            print(f"Error: Handler for manager '{manager}' not found!")
     except Exception as e:
         print(f"Error initializing JsonManager: {e}")
         exit(1)
