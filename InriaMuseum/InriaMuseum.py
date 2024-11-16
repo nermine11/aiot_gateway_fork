@@ -61,12 +61,11 @@ def notif_cb(notifName, notifJson):
 @app.route('/detecting', method='GET')
 def detect_presence():
     response.content_type = 'application/json'
-    print(mote_detecting)
     return json.dumps(mote_detecting)
 # Start the web server
 if __name__ == '__main__':
     try:
-        # Initialize the JsonManager with the appropriate settings
+        # Initialize the JsonManager
         json_manager = JsonManager.JsonManager(
             autoaddmgr=True,
             autodeletemgr=False,
