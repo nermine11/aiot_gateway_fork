@@ -12,6 +12,8 @@
         var last_fetched = 0;
         var intervalId;
         var inactivityTimer ;
+        var notif_updated = 0;
+        var detected_positions = new Set();
         var f_play_harry_potter = false;
         var f_play_star_wars = false;
         var MSGID_CMD_LOWPOWER          = 0x01
@@ -31,6 +33,11 @@
                         "apprentissage_board": "00-17-0D-00-00-68-0D-3A",
                         "reseau_board": "00-17-0D-00-00-70-53-BA",
                         "big_data_board" :"00-17-0D-00-00-68-0B-04"
+        }
+        function reset_values(){
+            num_people = 0;
+            fetch_detect = {};
+            detected_positions = new Set();
         }
         function handleButtonClick(event) { //event listener for buttons
             console.log(`ct handleButtonClick ${event}`);
@@ -58,7 +65,7 @@
                     break;
                 case "button_suite":
                 case "button_suite_label":
-                    current_page='select_music.svg'
+                    current_page='select_music.svg';
                     break;
                 case "button_music1" :
                     f_play_harry_potter = true;
@@ -141,7 +148,11 @@
                     console.log("Data updated, fetching new data...");
                     fetch_detect = fetch_detect_0.data; 
                     last_fetched = fetch_detect_0.last_updated; 
+                    notif_updated = 1;
                     console.log("fetch_detect:", fetch_detect);
+                }
+                else{
+                    notif_updated = 0;
                 }
             }catch (error) {
                     console.error('Error fetching detecting:', error.message);
@@ -290,44 +301,44 @@
                         "760.21",
                         "translate(-150.92 172.15) rotate(-12.77)"
                     ]
-                }
-            let detected_positions = new Set();
+                };
             intervalId= setInterval(() => {
                 console.log("interval id", intervalId);
                 // fetch data every 5s if it has been updated
                 detecting_notif();
                 console.log("fetch_detect after notif", fetch_detect);
-                for (let i = 0; i< num_people; i ++ ){
-                    let position = chosen_positions[i];
-                    let position_label = motes_positions_labels[position];                    
-                    let mac_address = (motes_positions[position_label]).toLowerCase();
-                    console.log( "check exitence", mac_address, fetch_detect[mac_address] , fetch_detect[mac_address] == 1);
-                    if ( (detected_positions.has(mac_address)) === false){
-                    // if a person is detected, add person logo in the appropriate position
-                        if(fetch_detect[mac_address] == 1){
-                            console.log("in detecinggg");
-                            // Add mote to the list of detected motes
-                            detected_positions.add(mac_address);
-                            console.log("deteceted pos",detected_positions);
-                            num_people_detected++;
-                            console.log("num detected", num_people_detected);
-                            add_logo(add_logo_dict, position, position_label, radius);
-                            if (num_people == num_people_detected){
-                                console.log( "all detected !");
-                                num_people = 0;
-                                fetch_detect = {};
-                                if (f_play_harry_potter){
-                                    send_data_to_mote(MSGID_CMD_play_Harry_Potter);
+                if(notif_updated == 1){
+                    for (let i = 0; i< num_people; i ++ ){
+                        let position = chosen_positions[i];
+                        let position_label = motes_positions_labels[position];                    
+                        let mac_address = (motes_positions[position_label]).toLowerCase();
+                        console.log( "check exitence", mac_address, fetch_detect[mac_address] , fetch_detect[mac_address] == 1);
+                        if ( (detected_positions.has(mac_address)) === false){
+                        // if a person is detected, add person logo in the appropriate position
+                            if(fetch_detect[mac_address] == 1){
+                                console.log("in detecinggg");
+                                // Add mote to the list of detected motes
+                                detected_positions.add(mac_address);
+                                console.log("deteceted pos",detected_positions);
+                                num_people_detected++;
+                                console.log("num detected", num_people_detected);
+                                add_logo(add_logo_dict, position, position_label, radius);
+                                if (num_people == num_people_detected){
+                                    console.log( "all detected !");
+                                    reset_values();
+                                    clearInterval(intervalId);
+                                    if (f_play_harry_potter){
+                                        send_data_to_mote(MSGID_CMD_play_Harry_Potter);
+                                    }
+                                    else if(f_play_star_wars){
+                                        send_data_to_mote(MSGID_CMD_play_Star_Wars);
+                                    }  
                                 }
-                                else if(f_play_star_wars){
-                                    send_data_to_mote(MSGID_CMD_play_Star_Wars);
-                                }  
-                                clearInterval(intervalId );
-                                
-                            }
-                        } 
+                            } 
+                        }
                     }
                 }
+
             },5000);
         }
         function checkPage() {
@@ -376,9 +387,7 @@
         function redirectToWelcome() {
             console.log("redirect")
             let redirect_page = "welcome.svg"
-            num_people = 0;
-            fetch_detect = {};
-            clearInterval(intervalId);  // Clear interval
+            reset_values();
             loadSVG(redirect_page);
         } 
         function resetInactivityTimer() {
