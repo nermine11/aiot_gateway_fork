@@ -239,14 +239,11 @@ class DataGatherer(threading.Thread):
             },
         }
         '''
-        print("motes data before notif", motes_data["data"])
-        print("Received data notification")
         mac_address = data['fields']['macAddress']
         raw_data = data['fields']['data']
         detect = raw_data[0]  # 1 to indicate presence, else 0
         motes_data["data"][mac_address] = detect
         motes_data["last_updated"] = time.time()  # update the timestamp
-        print("motes data after notif",motes_data["data"])
     # deleters
     
     def _deleteMotes(self,manager):
@@ -454,10 +451,8 @@ class WebServer(object):
         #when to send command LOWPOWER, what is button_lowpower?
         
         payload = request.json
-        print("payload",payload)
         data    = payload.get('data')
         data = [data]
-        print("data", data)
         if data:
                 self.dataGatherer.jsonManager.raw_POST(
                     commandArray = ['sendData'],
