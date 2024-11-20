@@ -244,6 +244,13 @@ class DataGatherer(threading.Thread):
         detect = raw_data[0]  # 1 to indicate presence, else 0
         motes_data["data"][mac_address] = detect
         motes_data["last_updated"] = time.time()  # update the timestamp
+
+        moteName = mote_macAddress2name[data['fields']['macAddress']]
+        if data['fields']['data']==[0x00]:
+            fill = 'red'
+        else:
+            fill = 'green'
+        AppData().notifData(moteName,fill)
     # deleters
     
     def _deleteMotes(self,manager):
