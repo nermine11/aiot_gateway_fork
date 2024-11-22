@@ -36,10 +36,7 @@ from dustCli                 import DustCli
 
 DFLT_SERIALPORT = '/dev/ttyUSB3'
 DFLT_TCPPORT    = 8081
-motes_data = {
-                "last_updated": time.time(),  #last update time
-                "data": {} 
-             }
+motes_data = {}
 
 MOTES = [
     # showroom
@@ -239,14 +236,13 @@ class DataGatherer(threading.Thread):
             },
         }
         '''
-        print("motes data before notif", motes_data["data"])
+        print("motes data before notif", motes_data)
         print("Received data notification")
         mac_address = data['fields']['macAddress']
         raw_data = data['fields']['data']
         detect = raw_data[0]  # 1 to indicate presence, else 0
-        motes_data["data"][mac_address] = detect
-        motes_data["last_updated"] = time.time()  # update the timestamp
-        print("motes data after notif",motes_data["data"])
+        motes_data[mac_address] = detect
+        print("motes data after notif",motes_data)
 
 
         moteName = mote_macAddress2name[data['fields']['macAddress']]

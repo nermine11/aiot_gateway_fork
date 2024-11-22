@@ -13,7 +13,6 @@
         var redirect = 0;
         var intervalId;
         var inactivityTimer ;
-        var notif_updated = 0;
         var f_play_harry_potter = false;
         var f_play_star_wars = false;
         var MSGID_CMD_LOWPOWER          = 0x01
@@ -148,18 +147,9 @@
                     throw new Error(`Response status: ${response.status}`);
                 }
                 // {m0: 0/1, m1: 0/1 .... m8: 0/1}
-                let fetch_detect_0 = await response.json();
-                if (fetch_detect_0.last_updated > last_fetched) {
-                    console.log("Data updated, fetching new data...");
-                    fetch_detect = fetch_detect_0.data; 
-                    last_fetched = fetch_detect_0.last_updated; 
-                    notif_updated = 1;
-                    console.log("fetch_detect:", fetch_detect);
+                let fetch_detect = await response.json();
                 }
-                else{
-                    notif_updated = 0;
-                }
-            }catch (error) {
+            catch (error) {
                     console.error('Error fetching detecting:', error.message);
             }
         }
@@ -491,8 +481,6 @@
                 // fetch data every 5s if it has been updated
                 detecting_notif();
                 console.log("fetch_detect after notif", fetch_detect);
-                console.log("notif updated",notif_updated);
-                if(notif_updated == 1){
                     for (let i = 0; i< num_people; i ++ ){
                         let position = chosen_positions[i];
                         let position_label = motes_positions_labels[position];                    
@@ -525,7 +513,7 @@
                     }
                 }
 
-            },5000);
+            ,5000);
         }
         function checkPage() {
             console.log("fct checkPage");
