@@ -35,7 +35,7 @@ from dustCli                 import DustCli
 #============================ define ==========================================
 
 DFLT_SERIALPORT = '/dev/ttyUSB3'
-DFLT_TCPPORT    = 8080
+DFLT_TCPPORT    = 8081
 motes_data = {
                 "last_updated": time.time(),  #last update time
                 "data": {} 
@@ -53,18 +53,18 @@ MOTES = [
     {'name': 'reseau_mote',        'macAddress': '00-17-0d-00-00-70-53-ba'},
     {'name': 'big_data_mote',      'macAddress': '00-17-0d-00-00-68-0b-04'},
     # expo
-    {'name': 'expo_mote1',         'macAddress': None},
-    {'name': 'expo_mote2',         'macAddress': None},
-    {'name': 'expo_mote3',         'macAddress': None},
-    {'name': 'expo_mote4',         'macAddress': None},
-    {'name': 'expo_mote5',         'macAddress': None},
+    {'name': 'expo_mote1',         'macAddress': '00-17-0d-00-00-68-0a-33'},
+    {'name': 'expo_mote2',         'macAddress': '00-17-0d-00-00-70-56-94'},
+    {'name': 'expo_mote3',         'macAddress': '00-17-0d-00-00-68-08-a0'},
+    {'name': 'expo_mote4',         'macAddress': '00-17-0d-00-00-70-1d-15'},
+    {'name': 'expo_mote5',         'macAddress': '00-17-0d-00-00-68-09-f6'},
     # hall
-    {'name': 'hall_mote1',         'macAddress': None},
-    {'name': 'hall_mote2',         'macAddress': None},
-    {'name': 'hall_mote3',         'macAddress': None},
-    {'name': 'hall_mote4',         'macAddress': None},
-    {'name': 'hall_mote5',         'macAddress': None},
-    {'name': 'hall_mote6',         'macAddress': None},
+    {'name': 'hall_mote1',         'macAddress': '00-17-0d-00-00-68-0b-c9'},
+    {'name': 'hall_mote2',         'macAddress': '00-17-0d-00-00-68-38-de'},
+    {'name': 'hall_mote3',         'macAddress': '00-17-0d-00-00-68-0b-b7'},
+    {'name': 'hall_mote4',         'macAddress': '00-17-0d-00-00-70-1c-2d'},
+    {'name': 'hall_mote5',         'macAddress': '00-17-0d-00-00-68-08-41'},
+    {'name': 'hall_mote6',         'macAddress': '00-17-0d-00-00-68-0a-16'},
 ]
 MOTENAMES = [m['name'] for m in MOTES]
 mote_macAddress2name = {}
@@ -402,7 +402,7 @@ class WebServer(object):
             try:
                 args[0](**kwargs) # blocking
             except socket.error as err:
-                if err[0]==10013:
+                if err.errno == 10013:
                     print ('FATAL: cannot open TCP port {0}.'.format(kwargs['port']))
                     print ('    Is another application running on that port?')
                 else:
