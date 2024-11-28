@@ -15,7 +15,6 @@
         var inactivityTimer ;
         var f_play_harry_potter = false;
         var f_play_star_wars = false;
-        var MSGID_CMD_LOWPOWER          = 0x01
         var MSGID_CMD_US_active         = 0x02;
         var MSGID_CMD_play_Star_Wars    = 0x03;
         var MSGID_CMD_play_Harry_Potter = 0x04;
@@ -38,20 +37,16 @@
             fetch_detect = {};
         }
         function handleButtonClick(event) { //event listener for buttons
-            console.log(`ct handleButtonClick ${event}`);
-            console.log(`event.target.id ${event.target.id}`);
             resetInactivityTimer(); 
             if(event.target.id == ""){
                 const parentElementId = event.target.parentElement ?
                 event.target.parentElement.id : 'No parent element';
-                console.log(`event.target.id ${event.target.parentElement.id}`)
                 changePage(parentElementId);
             }else{
                 changePage(event.target.id);
             }
         }
         function changePage(parent_element) {
-            console.log(`fct changePage ${parent_element}`);
             switch (parent_element) {
                 case "button_start_fr":
                     current_page='launching.svg';
@@ -120,9 +115,6 @@
             var payload = {
                 data: data
             };
-            console.log("Sending data with parameters:", {
-                        payload: data
-                    });
             fetch('/send_data', {
                 method: 'POST',
                 headers: {
@@ -140,7 +132,6 @@
             });
         }
         async function detecting_notif() {
-            console.log("fetch detecting");
             try {
                 const response = await fetch('/detecting');
                 if (!response.ok) {
@@ -194,7 +185,6 @@
         function change_color(chosen_positions){
             chosen_positions.forEach(position => {
                 const mote_board = document.getElementById(motes_positions_labels[position]);
-                console.log(`${mote_board}`);
                 if (!mote_board) {
                     console.error("Board not found");
                     return; 
@@ -203,7 +193,6 @@
             })
         }
         function add_logo(add_logo_dict,position, position_label , radius){
-            console.log("add logo", position_label);
             const id = position_label.replace("_board", "");
             const detect = document.getElementById(`${id}_detect`)
             if (detect) {
@@ -394,7 +383,6 @@
                 }
         }
         function change_map(){
-            console.log("change map");
             replace_top_description();
             replace_bottom_description();
             // radiuses of circles composing the active mote circle
@@ -477,28 +465,20 @@
                 };
                 let detected_positions = new Set();
                 intervalId= setInterval(() => {
-                console.log("interval id", intervalId);
-                // fetch data every 5s if it has been updated
-                detecting_notif();
-                console.log("fetch_detect after notif", fetch_detect);
+                    // fetch data every 5s if it has been updated
+                    detecting_notif();
                     for (let i = 0; i< num_people; i ++ ){
                         let position = chosen_positions[i];
                         let position_label = motes_positions_labels[position];                    
                         let mac_address = (motes_positions[position_label]);
-                        console.log( "check exitence", mac_address, fetch_detect[mac_address] , fetch_detect[mac_address] == 1);
-                        console.log("detected positions", detected_positions);
                         if ( (detected_positions.has(mac_address)) === false){
-                        // if a person is detected, add person logo in the appropriate position
+                            // if a person is detected, add person logo in the appropriate position
                             if(fetch_detect[mac_address] == 1){
-                                console.log("in detecinggg");
                                 // Add mote to the list of detected motes
                                 detected_positions.add(mac_address);
-                                console.log("deteceted pos",detected_positions);
                                 num_people_detected++;
-                                console.log("num detected", num_people_detected);
                                 add_logo(add_logo_dict, position, position_label, radius);
                                 if (num_people == num_people_detected){
-                                    console.log( "all detected !");
                                     reset_values();
                                     clearInterval(intervalId);
                                     if (f_play_harry_potter){
@@ -511,12 +491,9 @@
                             } 
                         }
                     }
-                }
-
-            ,5000);
+                },5000);
         }
         function checkPage() {
-            console.log("fct checkPage");
             // display defi page(introduction.svg) after 3s
             if(current_page=="launching.svg"){
                 current_page = "introduction.svg";
@@ -526,9 +503,7 @@
             }
         }
         function loadSVG(filename) {
-            console.log("fct loadSVG");
             const filePath = `./static/svg/${filename}`;
-            console.log(`New page ${filename} `);
             fetch(filePath)
                 .then(response => response.text())
                 .then(svgContent => {
@@ -542,7 +517,6 @@
                 .catch(error => console.error('Error loading SVG:', error));
         }
         function activate_buttons() { 
-            console.log("fct load element");
             const button_ids = ["button_start_fr","button_start_fr_label", "button_active", 
                         "button_suite_group", "button_music1", "button_music2",
                         "button_num_people_1", "button_num_people_2", "button_num_people_3", "button_num_people_4",
@@ -559,7 +533,6 @@
         // Function to redirect to welcome page
         // after 5 minutes of no clicks
         function redirectToWelcome() {
-            console.log("redirect");
             let redirect_page = 'welcome.svg';
             reset_values();
             redirect = 1;
@@ -567,10 +540,8 @@
         } 
         function resetInactivityTimer() {
             const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
-            console.log("Clearing previous timer:", inactivityTimer);
             clearTimeout(inactivityTimer); 
             inactivityTimer = setTimeout(redirectToWelcome, INACTIVITY_TIMEOUT); 
-            console.log("New timer set:", inactivityTimer);
         }
         window.onload = function() {
             loadSVG('welcome.svg');
