@@ -456,7 +456,7 @@ class WebServer(object):
   
     def _webhandle_museum_POST(self):
         #when to send command LOWPOWER, what is button_lowpower?
-        
+        time.sleep(1)  # Allow slight delay for sync
         payload = request.json
         data    = payload.get('data')
         data = [data]

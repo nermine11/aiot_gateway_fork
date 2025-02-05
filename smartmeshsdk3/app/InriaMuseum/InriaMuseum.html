@@ -9,7 +9,7 @@
         var f_call_change_map = false; // if f_call_change_map, execute change_map()
         var num_people;
         var fetch_detect = {};
-        var last_fetched = 0;
+        var detected_positions = new Set();
         var redirect = 0;
         var intervalId;
         var inactivityTimer ;
@@ -32,12 +32,27 @@
                         "reseau_board": "00-17-0d-00-00-70-53-ba",
                         "big_data_board" :"00-17-0d-00-00-68-0b-04"
         }
+        /*
+           reset concerned values after the music played
+        */
         function reset_values(){
             num_people = 0;
             fetch_detect = {};
+            detected_positions = new Set();
         }
-        function handleButtonClick(event) { //event listener for buttons
-            resetInactivityTimer(); 
+        /*
+           event listener for the buttons
+        */
+        function handleButtonClick(event) { 
+            resetInactivityTimer();
+            console.log("yo",event.target.id);
+            console.log(f_skip_music);
+            if (f_skip_music && (event.target.id === "button_suite" || event.target.parentElement.id === "button_start_fr_label")) {
+                    console.log("values_reset");
+                    reset_values();
+                    console.log(fetch_detect);
+                    console.log(detected_positions);
+                }
             if(event.target.id == ""){
                 const parentElementId = event.target.parentElement ?
                 event.target.parentElement.id : 'No parent element';
@@ -46,6 +61,9 @@
                 changePage(event.target.id);
             }
         }
+        /*
+            change page depending on the button clicked
+        */
         function changePage(parent_element) {
             switch (parent_element) {
                 case "button_start_fr":
@@ -63,7 +81,6 @@
                     }
                     break;
                 case "button_suite":
-                case "button_suite_label":
                     current_page='select_music.svg';
                     break;
                 case "button_music1" :
@@ -110,6 +127,9 @@
             loadSVG(current_page);
             checkPage();
         }
+        /*
+            Send US_detection or music commands to the motes
+        */
         function send_data_to_mote(data) {
             // Prepare the data to send in the body of the POST request
             var payload = {
@@ -131,6 +151,9 @@
                 alert("Error sending data");
             });
         }
+        /*
+            Save the US notifications from the motes
+        */
         async function detecting_notif() {
             try {
                 const response = await fetch('/detecting');
@@ -145,7 +168,9 @@
             }
         }
     
-        // Change mote circles from grey to green to indicate that they are part of the network
+        /*  
+            Change mote circles from grey to green to indicate that they are part of the network
+        */
         function active_motes(grey_motes_ids,r1, r2, r3, r4){
             grey_motes_ids.forEach(mote => {
                     const mote_grey_circle = document.getElementById(mote);
@@ -181,7 +206,9 @@
                         }
                 })  
         }
-        // change board color of chosen positions to orange
+        /* 
+             change board color of chosen positions to orange
+        */
         function change_color(chosen_positions){
             chosen_positions.forEach(position => {
                 const mote_board = document.getElementById(motes_positions_labels[position]);
@@ -192,6 +219,9 @@
                 mote_board.setAttribute("class", "cls-14");
             })
         }
+        /* 
+            add logo for a detected position
+        */
         function add_logo(add_logo_dict,position, position_label , radius){
             const id = position_label.replace("_board", "");
             const detect = document.getElementById(`${id}_detect`)
@@ -207,6 +237,10 @@
                 }
             }
         }
+        /*
+            replace top_description in map.svg when it is in its second appearance
+            ( when the music is going to play)
+        */
         function replace_top_description(){
             const description = document.getElementById("description");
             const new_description = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -320,6 +354,10 @@
                     console.log("element replaced");
                 }
         }
+        /*
+            replace bottom_description in map.svg when it is in its second appearance
+            ( when the music is going to play)
+        */
         function replace_bottom_description(){
             const circleElement = document.getElementById("mote_exemple"); 
                 if (circleElement) {
@@ -382,6 +420,10 @@
                     console.log("element replaced");
                 }
         }
+        /*
+            change map.svg for its second appearance 
+            ( when the music is going to play)
+        */
         function change_map(){
             replace_top_description();
             replace_bottom_description();
@@ -411,7 +453,6 @@
                 }
                 return Array.from(uniqueNumbers);
             }
-            //let chosen_positions = [1];
             let chosen_positions = random_set(0, num_positions - 1, num_people);
             change_color(chosen_positions);
             // Check if person is in the specified position, if so add a person logo
@@ -463,38 +504,39 @@
                         "translate(-150.92 172.15) rotate(-12.77)"
                     ]
                 };
-                let detected_positions = new Set();
-                intervalId= setInterval(() => {
-                    // fetch data every 5s if it has been updated
-                    detecting_notif();
-                    for (let i = 0; i< num_people; i ++ ){
-                        let position = chosen_positions[i];
-                        let position_label = motes_positions_labels[position];                    
-                        let mac_address = (motes_positions[position_label]);
-                        if ( (detected_positions.has(mac_address)) === false){
-                            // if a person is detected, add person logo in the appropriate position
-                            if(fetch_detect[mac_address] == 1){
-                                // Add mote to the list of detected motes
-                                detected_positions.add(mac_address);
-                                num_people_detected++;
-                                add_logo(add_logo_dict, position, position_label, radius);
-                                if (num_people == num_people_detected){
-                                    reset_values();
-                                    clearInterval(intervalId);
-                                    if (f_play_harry_potter){
-                                        send_data_to_mote(MSGID_CMD_play_Harry_Potter);
-                                    }
-                                    else if(f_play_star_wars){
-                                        send_data_to_mote(MSGID_CMD_play_Star_Wars);
-                                    }  
+            intervalId= setInterval(() => {
+                // fetch data every 5s 
+                detecting_notif();
+                for (let i = 0; i< num_people; i ++ ){
+                    let position = chosen_positions[i];
+                    let position_label = motes_positions_labels[position];                    
+                    let mac_address = (motes_positions[position_label]);
+                    if ( (detected_positions.has(mac_address)) === false){
+                        // if a person is detected, add person logo in the appropriate position
+                        if(fetch_detect[mac_address] == 1){
+                            // Add mote to the list of detected motes
+                            detected_positions.add(mac_address);
+                            num_people_detected++;
+                            add_logo(add_logo_dict, position, position_label, radius);
+                            if (num_people == num_people_detected){
+                                reset_values();
+                                clearInterval(intervalId);
+                                if (f_play_harry_potter){
+                                    send_data_to_mote(MSGID_CMD_play_Harry_Potter);
                                 }
-                            } 
-                        }
+                                else if(f_play_star_wars){
+                                    send_data_to_mote(MSGID_CMD_play_Star_Wars);
+                                }  
+                            }
+                        } 
                     }
-                },5000);
+                }
+            },5000);
         }
+        /*
+            display defi page(introduction.svg) after 3s
+        */
         function checkPage() {
-            // display defi page(introduction.svg) after 3s
             if(current_page=="launching.svg"){
                 current_page = "introduction.svg";
                 setTimeout(function(){
@@ -502,6 +544,9 @@
                      }, 3000);
             }
         }
+        /*
+            load the svg page
+        */
         function loadSVG(filename) {
             const filePath = `./static/svg/${filename}`;
             fetch(filePath)
@@ -516,9 +561,12 @@
                 })
                 .catch(error => console.error('Error loading SVG:', error));
         }
+        /*
+            add event_listener for the buttons
+        */
         function activate_buttons() { 
             const button_ids = ["button_start_fr","button_start_fr_label", "button_active", 
-                        "button_suite_group", "button_music1", "button_music2",
+                        "button_suite", "button_music1", "button_music2",
                         "button_num_people_1", "button_num_people_2", "button_num_people_3", "button_num_people_4",
                         "button_credits" ,"button_leave"];
             button_ids.forEach(id => {
@@ -530,14 +578,19 @@
                 }
             });
         }
-        // Function to redirect to welcome page
-        // after 5 minutes of no clicks
+        /* 
+            redirect to welcome page
+            after 5 minutes of no clicks
+        */
         function redirectToWelcome() {
             let redirect_page = 'welcome.svg';
             reset_values();
             redirect = 1;
             loadSVG(redirect_page);
         } 
+        /*
+            reset the inactivity(no clicks) timer
+        */
         function resetInactivityTimer() {
             const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
             clearTimeout(inactivityTimer); 
