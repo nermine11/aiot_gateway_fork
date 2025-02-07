@@ -236,12 +236,9 @@ class DataGatherer(threading.Thread):
             },
         }
         '''
-        print("motes data before notif", motes_data)
-        print("Received data notification")
         mac_address = data['fields']['macAddress']
         raw_data = data['fields']['data']
-        detect = raw_data[0]  # 1 to indicate presence, else 0
-        motes_data[mac_address] = detect
+        motes_data[mac_address] = raw_data[0]
         print("motes data after notif",motes_data)
 
 
@@ -455,8 +452,6 @@ class WebServer(object):
 
   
     def _webhandle_museum_POST(self):
-        #when to send command LOWPOWER, what is button_lowpower?
-        time.sleep(1)  # Allow slight delay for sync
         payload = request.json
         data    = payload.get('data')
         data = [data]

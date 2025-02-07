@@ -8,13 +8,16 @@
         var previous_page;
         var f_call_change_map = false; // if f_call_change_map, execute change_map()
         var num_people;
-        var fetch_detect = {};
-        var detected_positions = new Set();
+        var fetched_US_notifs = {};
+        var detected_pos_adresses = new Set();
         var redirect = 0;
         var intervalId;
         var inactivityTimer ;
+        var US_notifs = {};
+        var NUM_MOTES = 9;
         var f_play_harry_potter = false;
         var f_play_star_wars = false;
+        var f_skip_music = false;
         var MSGID_CMD_US_active         = 0x02;
         var MSGID_CMD_play_Star_Wars    = 0x03;
         var MSGID_CMD_play_Harry_Potter = 0x04;
@@ -37,8 +40,9 @@
         */
         function reset_values(){
             num_people = 0;
-            fetch_detect = {};
-            detected_positions = new Set();
+            fetched_US_notifs = {};
+            detected_pos_adresses = new Set();
+            f_skip_music = false;
         }
         /*
            event listener for the buttons
@@ -48,10 +52,8 @@
             console.log("yo",event.target.id);
             console.log(f_skip_music);
             if (f_skip_music && (event.target.id === "button_suite" || event.target.parentElement.id === "button_start_fr_label")) {
-                    console.log("values_reset");
                     reset_values();
-                    console.log(fetch_detect);
-                    console.log(detected_positions);
+                    clearInterval(intervalId); 
                 }
             if(event.target.id == ""){
                 const parentElementId = event.target.parentElement ?
@@ -160,14 +162,22 @@
                 if (!response.ok) {
                     throw new Error(`Response status: ${response.status}`);
                 }
-                // {m0: 0/1, m1: 0/1 .... m8: 0/1}
-                fetch_detect = await response.json();
+                fetched_US_notifs = await response.json();
                 }
             catch (error) {
                     console.error('Error fetching detecting:', error.message);
             }
         }
-    
+        /*
+            dictionary tracking the detected positions
+        */
+        function intialize_US_notifs(){
+            for( i = 0; i < NUM_MOTES; i++){
+                let key =  motes_positions_labels[i];
+                US_notifs[motes_positions[key]] = 0;
+            }
+        }
+
         /*  
             Change mote circles from grey to green to indicate that they are part of the network
         */
@@ -212,6 +222,7 @@
         function change_color(chosen_positions){
             chosen_positions.forEach(position => {
                 const mote_board = document.getElementById(motes_positions_labels[position]);
+                console.log(mote_board);
                 if (!mote_board) {
                     console.error("Board not found");
                     return; 
@@ -433,8 +444,6 @@
             const r3= 25.08;
             const r4= 28.00;
             const radius = 13.33;
-            const num_positions = 9;
-            let num_people_detected = 0;
             const grey_motes_ids = [
                     "hall_mote1", "hall_mote2","hall_mote3","hall_mote4",
                     "hall_mote5", "hall_mote6", "expo_mote1", "expo_mote2", 
@@ -444,7 +453,7 @@
                     "reseau_mote", "big_data_mote"
                 ];
             active_motes(grey_motes_ids, r1, r2, r3, r4);
-            // Set of n unique random integers between min = 0 and max = num_positions-1 = 8
+            // Set of n unique random integers between min = 0 and max = NUM_MOTES-1 = 8
             const random_set = (min, max, n = 1) => {
                 const uniqueNumbers = new Set();
                 while (uniqueNumbers.size < n) {
@@ -453,7 +462,7 @@
                 }
                 return Array.from(uniqueNumbers);
             }
-            let chosen_positions = random_set(0, num_positions - 1, num_people);
+            let chosen_positions = random_set(0, NUM_MOTES - 1, num_people);
             change_color(chosen_positions);
             // Check if person is in the specified position, if so add a person logo
             let add_logo_dict= {
@@ -504,6 +513,8 @@
                         "translate(-150.92 172.15) rotate(-12.77)"
                     ]
                 };
+            f_skip_music = true;
+            let num_people_detected = 0;
             intervalId= setInterval(() => {
                 // fetch data every 5s 
                 detecting_notif();
@@ -511,11 +522,16 @@
                     let position = chosen_positions[i];
                     let position_label = motes_positions_labels[position];                    
                     let mac_address = (motes_positions[position_label]);
-                    if ( (detected_positions.has(mac_address)) === false){
+                    if (mac_address in fetched_US_notifs){
+                        US_notifs[mac_address] = fetched_US_notifs[mac_address];
+                    }       
+                    console.log("fetched_US_notifs", fetched_US_notifs);
+                    console.log("notifs", US_notifs);             
+                    if ( (detected_pos_adresses.has(mac_address)) === false){
                         // if a person is detected, add person logo in the appropriate position
-                        if(fetch_detect[mac_address] == 1){
+                        if(US_notifs[mac_address] == 1){
                             // Add mote to the list of detected motes
-                            detected_positions.add(mac_address);
+                            detected_pos_adresses.add(mac_address);
                             num_people_detected++;
                             add_logo(add_logo_dict, position, position_label, radius);
                             if (num_people == num_people_detected){
@@ -531,7 +547,7 @@
                         } 
                     }
                 }
-            },5000);
+            },3000);
         }
         /*
             display defi page(introduction.svg) after 3s
@@ -597,6 +613,7 @@
             inactivityTimer = setTimeout(redirectToWelcome, INACTIVITY_TIMEOUT); 
         }
         window.onload = function() {
+            intialize_US_notifs();
             loadSVG('welcome.svg');
         }
 
