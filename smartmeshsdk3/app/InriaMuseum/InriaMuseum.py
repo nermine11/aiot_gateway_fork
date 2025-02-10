@@ -158,7 +158,6 @@ class DataGatherer(threading.Thread):
         # local variables
         self.delaySnapshot        = 1 # wait for banners before first snapshot
         self.goOn                 = True
-
         # start thread
         threading.Thread.__init__(self)
         self.name = 'DataGatherer'
