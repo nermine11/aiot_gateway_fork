@@ -133,6 +133,7 @@ class AppData(object):
             }
     
     #======================== public ==========================================
+    
     def notifData(self,motename,fill):
         with self.dataLock:
             self.data['motes'][motename]['fill']=fill
@@ -158,7 +159,6 @@ class DataGatherer(threading.Thread):
         self.delaySnapshot        = 1 # wait for banners before first snapshot
         self.goOn                 = True
 
-        
         # start thread
         threading.Thread.__init__(self)
         self.name = 'DataGatherer'
@@ -191,7 +191,6 @@ class DataGatherer(threading.Thread):
     
     def close(self):
         self.goOn = False
-
     #======================== private =========================================
     
     # === abstract methods
@@ -214,7 +213,6 @@ class DataGatherer(threading.Thread):
     # === private
     
     # notifications from networks
-    #send notif to html, add get request 
     def _notif_cb(self,notifName,notifJson):
         if notifName=='notifData':
             self._device_notifData_cb(notifJson)
@@ -247,6 +245,7 @@ class DataGatherer(threading.Thread):
         else:
             fill = 'green'
         AppData().notifData(moteName,fill)
+
     # deleters
     
     def _deleteMotes(self,manager):
@@ -414,7 +413,7 @@ class WebServer(object):
     def _webhandle_root_GET(self):
         bottle.redirect("/museum")
 
-    def _webhandle_static_GET(self, path):
+    def _webhandle_static_GET(self,path):
         return bottle.static_file(
             path, 
             root='./static')
@@ -522,7 +521,7 @@ class InriaMuseum(object):
 
 #============================ main =======================================
 
-def main( args):
+def main(args):
     InriaMuseum(**args)
 
 if __name__=="__main__":
