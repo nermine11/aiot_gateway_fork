@@ -239,7 +239,6 @@ class DataGatherer(threading.Thread):
         mac_address = data['fields']['macAddress']
         raw_data = data['fields']['data']
         motes_data[mac_address] = raw_data[0]
-        print("motes data after notif",motes_data)
 
 
         moteName = mote_macAddress2name[data['fields']['macAddress']]

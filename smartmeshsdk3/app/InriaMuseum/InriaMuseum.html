@@ -49,8 +49,6 @@
         */
         function handleButtonClick(event) { 
             resetInactivityTimer();
-            console.log("yo",event.target.id);
-            console.log(f_skip_music);
             if (f_skip_music && (event.target.id === "button_suite" || event.target.parentElement.id === "button_start_fr_label")) {
                     reset_values();
                     clearInterval(intervalId); 
@@ -222,7 +220,6 @@
         function change_color(chosen_positions){
             chosen_positions.forEach(position => {
                 const mote_board = document.getElementById(motes_positions_labels[position]);
-                console.log(mote_board);
                 if (!mote_board) {
                     console.error("Board not found");
                     return; 
@@ -463,7 +460,6 @@
                 return Array.from(uniqueNumbers);
             }
             let chosen_positions = random_set(0, NUM_MOTES - 1, num_people);
-            console.log(chosen_positions);
             change_color(chosen_positions);
             // Check if person is in the specified position, if so add a person logo
             let add_logo_dict= {
@@ -526,8 +522,6 @@
                     if (mac_address in fetched_US_notifs){
                         US_notifs[mac_address] = fetched_US_notifs[mac_address];
                     }       
-                    console.log("fetched_US_notifs", fetched_US_notifs);
-                    console.log("notifs", US_notifs);             
                     if ( (detected_pos_adresses.has(mac_address)) === false){
                         // if a person is detected, add person logo in the appropriate position
                         if(US_notifs[mac_address] == 1){
